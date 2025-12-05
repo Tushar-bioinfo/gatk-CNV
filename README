@@ -1,129 +1,128 @@
-GATK4 CNV Analysis Pipeline for dbGaP RNA-Seq
-------------------------------------------------------------
-A reproducible, HPC-optimized workflow for computing copy number variation (CNV) from large-scale cancer RNA-seq datasets.
+GATK4 CNV Analysis Pipeline
+A structured, reproducible workflow for preprocessing, CNV computation, and downstream statistical analysis using dbGaP RNA-seq data.
 
-Overview
-------------------------------------------------------------
-This repository contains a complete pipeline that processes dbGaP-protected RNA-seq samples from raw SRA files to final CNV matrices. The workflow includes preprocessing using shell scripts, post-processing and analysis using R, and downstream survival analysis performed in Jupyter notebooks (.ipynb).
+----------------------------------------------------------------------
+Project Overview
+----------------------------------------------------------------------
+This repository provides an end-to-end workflow for performing copy number variation (CNV) analysis on large-scale cancer RNA-seq cohorts. The pipeline is organized into three stages:
 
-The pipeline is designed for high-throughput execution on Slurm-based HPC systems.
+1. Pre-processing — raw SRA handling, FASTQ generation, alignment, and file preparation (shell + Python + Jupyter).
+2. Processing — GATK4 CNV workflow for read counting, PoN construction, denoising, and segmentation (shell).
+3. Post-processing — gene-level CNV aggregation and statistical analyses (R), followed by survival analysis using Jupyter notebooks.
 
-Key Features
-------------------------------------------------------------
-- End-to-end processing: SRA → FASTQ → BAM → CNV segments
-- Preprocessing implemented using shell scripts
-- GATK4-based CNV workflow: CollectReadCounts, CreateReadCountPanelOfNormals, DenoiseReadCounts, ModelSegments
-- Robust Panel of Normals (PoN) construction
-- Post-processing and gene-level CNV aggregation performed in R
-- Survival analysis and downstream modeling performed in Jupyter notebooks
-- Scales efficiently to thousands of samples using Slurm array jobs
+The workflow is designed for HPC execution on Slurm clusters and is compatible with dbGaP-restricted environments.
 
-Pipeline Architecture
-------------------------------------------------------------
-SRA Accessions
-      |
-      v
-FASTQ extraction (fasterq-dump, scratch-based)
-      |
-      v
-Alignment with BWA-mem2 → Sorted/Indexed BAMs (samtools)
-      |
-      v
-GATK CollectReadCounts (tumor + normal)
-      |
-      v
-CreateReadCountPanelOfNormals (normal cohort)
-      |
-      v
-DenoiseReadCounts + ModelSegments (tumor samples)
-      |
-      v
-CNV Segments and Copy-Ratio Files
-      |
-      v
-R Scripts: Gene-level CNV annotation and matrix generation
-      |
-      v
-Jupyter Notebooks: Survival analysis and interpretation
+----------------------------------------------------------------------
+Folder Structure
+----------------------------------------------------------------------
+workflow/
+    01-pre_processing/
+        01_pre.sh
+        02_pre.sh
+        03_pre.py
+        04_pre.ipynb
 
-Repository Structure
-------------------------------------------------------------
-CNV-Pipeline/
-    scripts/
-        prefetch.sh                 # Download SRA accessions
-        fastq_extract.sh            # fasterq-dump with timeout + scratch
-        align_bwa.sh                # BWA-mem2 alignment + BAM sorting
-        read_counts.sh              # GATK CollectReadCounts
-        build_pon.sh                # CreateReadCountPanelOfNormals
-        model_segments.sh           # DenoiseReadCounts + ModelSegments
-    
-    R/
-        annotate_segments.R         # Map CNV segments to gene coordinates
-        build_cnv_matrix.R          # Create final gene-level CNV matrix
-    
-    notebooks/
-        survival_analysis.ipynb     # Kaplan-Meier and Cox modeling
-    
-    intervals/
-        autosomes.interval_list     # Standardized autosomal intervals
-    
-    example_outputs/
-        sample_copyratio.tsv
-        sample_segments.tsv
-        gene_cnv_matrix.tsv
+    02-processing/
+        01_main.sh
+        02_main.sh
+        03_main.sh
+        04_main.sh
+        05_main.sh
+        06_main.sh
+        07_main.sh
+        08_main.sh
 
+    03-post_processing/
+        main_01.R
+        main_02.R
+        survival_analysis.ipynb
+
+----------------------------------------------------------------------
+Workflow Summary
+----------------------------------------------------------------------
+
+1. Pre-Processing (Shell + Python + Jupyter)
+    - Download and validate dbGaP SRA files.
+    - Extract FASTQ files using fasterq-dump with scratch storage and timeout handling.
+    - Align reads with BWA-mem2 and generate sorted/indexed BAM files.
+    - Perform basic QC and metadata preparation.
+
+2. CNV Processing (GATK4 CNV)
+    - CollectReadCounts for all samples.
+    - Build Panel of Normals (CreateReadCountPanelOfNormals).
+    - DenoiseReadCounts using the PoN.
+    - Segment genomes using ModelSegments.
+    - Export CNV segments and copy-ratio files.
+
+3. Post-Processing (R + Jupyter)
+    - Map CNV segments to gene coordinates.
+    - Produce the final gene-by-sample CNV matrix.
+    - Perform survival analysis (Kaplan–Meier, Cox) and create visualizations in Jupyter notebooks.
+
+----------------------------------------------------------------------
 Requirements
-------------------------------------------------------------
+----------------------------------------------------------------------
+
 Software:
     GATK 4.x
     BWA-mem2
     samtools
-    SRA Toolkit (prefetch, fasterq-dump)
+    SRA Toolkit
     Python 3.9+
     R 4.0+
     Slurm HPC environment
 
-R Packages:
+Key R Packages:
     data.table
     dplyr
     GenomicRanges
     readr
 
-Python Packages:
+Key Python Packages:
     pandas
     numpy
 
+----------------------------------------------------------------------
 Usage Summary
-------------------------------------------------------------
-1. Run preprocessing (shell scripts):
-       sbatch scripts/prefetch.sh
-       sbatch --array=1-N scripts/fastq_extract.sh
-       sbatch --array=1-N scripts/align_bwa.sh
-       sbatch --array=1-N scripts/read_counts.sh
-       sbatch scripts/build_pon.sh
-       sbatch --array=1-N scripts/model_segments.sh
+----------------------------------------------------------------------
 
-2. Run post-processing in R:
-       Rscript R/annotate_segments.R
-       Rscript R/build_cnv_matrix.R
+Pre-Processing:
+    sbatch workflow/01-pre_processing/01_pre.sh
+    sbatch workflow/01-pre_processing/02_pre.sh
+    python workflow/01-pre_processing/03_pre.py
+    jupyter notebook workflow/01-pre_processing/04_pre.ipynb
 
-3. Survival analysis in notebooks:
-       Launch Jupyter Notebook and open notebooks/survival_analysis.ipynb
+CNV Processing:
+    sbatch workflow/02-processing/01_main.sh
+    sbatch workflow/02-processing/02_main.sh
+    sbatch workflow/02-processing/04_main.sh
+    sbatch workflow/02-processing/05_main.sh
+    sbatch workflow/02-processing/06_main.sh
 
+Post-Processing:
+    Rscript workflow/03-post_processing/main_01.R
+    Rscript workflow/03-post_processing/main_02.R
+    jupyter notebook workflow/03-post_processing/survival_analysis.ipynb
+
+----------------------------------------------------------------------
 Outputs
-------------------------------------------------------------
-- Copy-ratio files (per sample)
-- Denoised copy ratios
-- CNV segment tables
+----------------------------------------------------------------------
+
+- Copy-ratio files for each sample
+- Denoised copy-ratio files
+- CNV segmentation tables
 - Gene-level CNV matrix
-- Survival curves and Cox regression results (ipynb)
+- Survival analysis results and figures
 
+----------------------------------------------------------------------
 Notes
-------------------------------------------------------------
-- The pipeline is compatible with restricted-access environments (dbGaP).
-- All preprocessing steps are designed to operate without external internet access.
-- Scratch directories should be configured per HPC cluster guidelines.
+----------------------------------------------------------------------
 
+- All scripts comply with dbGaP privacy rules and do not require internet access after SRA retrieval.
+- Scratch directories must be configured based on your HPC cluster.
+- Interval lists must remain consistent across all samples.
+
+----------------------------------------------------------------------
 Contact
-------------------------------------------------------------
-For questions, open an issue or pull request on the repository.
+----------------------------------------------------------------------
+For issues or contributions, please submit a GitHub issue or pull request.
