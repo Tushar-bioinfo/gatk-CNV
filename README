@@ -1,10 +1,10 @@
 # GATK4-CNV-Pipeline
 Copy Number Variation Analysis for Cancer RNA-Seq Data
 
-This project implements a fully reproducible workflow for computing CNVs from large-scale dbGaP/GDC RNA-seq cohorts using GATK4.  
+This project implements a fully reproducible workflow for computing copy number variations (CNVs) from large-scale dbGaP/GDC RNA-seq cohorts using GATK4.  
 The workflow is organized into three phases: pre-processing (SRA → FASTQ → BAM), CNV processing (GATK CNV tools), and post-processing (gene-level CNV matrix + survival analysis).
 
-The goal is to provide a structured pipeline that scales on HPC (Slurm) systems and supports downstream statistical and clinical analyses.
+The pipeline is designed to scale on HPC (Slurm) systems and supports downstream statistical and clinical analyses.
 
 ---
 
@@ -16,7 +16,7 @@ The goal is to provide a structured pipeline that scales on HPC (Slurm) systems 
 - Sort and index BAM files using samtools  
 - Perform QC and metadata preparation (Python + Jupyter)
 
-Folder: `workflow/01-pre_processing`
+Folder: workflow/01-pre_processing
 
 Files:
 - 01_pre.sh  
@@ -29,12 +29,12 @@ Files:
 ## CNV Processing (GATK4)
 
 - CollectReadCounts for tumor and normal samples  
-- Build Panel of Normals (CreateReadCountPanelOfNormals)  
-- Apply DenoiseReadCounts using PoN  
+- Build a Panel of Normals (CreateReadCountPanelOfNormals)  
+- Apply DenoiseReadCounts using the PoN  
 - Segment genomes using ModelSegments  
 - Export CNV segments and copy-ratio files
 
-Folder: `workflow/02-processing`
+Folder: workflow/02-processing
 
 Files:
 - 01_main.sh  
@@ -51,10 +51,10 @@ Files:
 ## Post-Processing & Analysis
 
 - Map CNV segments to gene coordinates (R)  
-- Generate gene-level CNV matrices for cohort analyses  
+- Generate gene-level CNV matrices for cohort-level analysis  
 - Perform survival analysis (Kaplan–Meier, Cox models) in Jupyter notebooks
 
-Folder: `workflow/03-post_processing`
+Folder: workflow/03-post_processing
 
 Files:
 - main_01.R  
